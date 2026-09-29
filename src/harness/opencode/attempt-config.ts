@@ -125,7 +125,10 @@ export function renderOpenCodeAttemptConfig(
           model: reviewModel,
           permission: {
             edit: "deny",
-            bash: "deny",
+            bash: {
+              "*": "deny",
+              pwd: "allow",
+            },
             webfetch: "deny",
           },
         },
