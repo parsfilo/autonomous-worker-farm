@@ -43,6 +43,21 @@ export const OPENCODE_FIXED_RUN_ARGV = [
   "Execute the task described in the attached task file. Work only in repo/.",
 ] as const;
 
+export const OPENCODE_REVIEW_RUN_ARGV = [
+  "opencode",
+  "run",
+  "--standalone",
+  "--format",
+  "json",
+  "--agent",
+  "plan",
+  "--title",
+  "AWF Independent Review",
+  "--file",
+  "control/task.md",
+  "Review the exact candidate described in the attached task file. Work only in repo/. Return only the requested machine-verifiable review JSON.",
+] as const;
+
 export function renderOpenCodeTaskDocument(task: TaskSpec): string {
   const lines = [
     "# Autonomous Worker Task",
@@ -183,8 +198,12 @@ export class OpenCodeAdapter implements HarnessAdapter {
         repoDir,
         artifactsDir,
         invocation: {
-          command: OPENCODE_FIXED_RUN_ARGV[0],
-          args: [...OPENCODE_FIXED_RUN_ARGV.slice(1)],
+          command: (policy.readOnlyReviewMode ? OPENCODE_REVIEW_RUN_ARGV : OPENCODE_FIXED_RUN_ARGV)[0],
+          args: [
+            ...(policy.readOnlyReviewMode
+              ? OPENCODE_REVIEW_RUN_ARGV.slice(1)
+              : OPENCODE_FIXED_RUN_ARGV.slice(1)),
+          ],
         },
       },
     };

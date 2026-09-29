@@ -15,7 +15,7 @@ import { collectGitCandidate } from "../src/execution/claimed-attempt-executor.j
 import { parseGitHubActionsResultArtifact } from "../src/execution/github-actions-artifact.js";
 import { githubActionsReviewRequestHash } from "../src/execution/github-actions-review-binding.js";
 import {
-  OPENCODE_FIXED_RUN_ARGV,
+  OPENCODE_REVIEW_RUN_ARGV,
   renderOpenCodeTaskDocument,
 } from "../src/harness/opencode/adapter.js";
 import { renderOpenCodeAttemptConfig } from "../src/harness/opencode/attempt-config.js";
@@ -198,7 +198,7 @@ async function runReviewer(input: {
           "--env", "CI=true",
           "--workdir", "/run",
           input.workerImage,
-          ...OPENCODE_FIXED_RUN_ARGV,
+          ...OPENCODE_REVIEW_RUN_ARGV,
         ],
         input.task.timeout_seconds * 1000,
       );

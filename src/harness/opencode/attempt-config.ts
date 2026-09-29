@@ -111,6 +111,16 @@ export function renderOpenCodeAttemptConfig(
     const config: Record<string, unknown> = {
       $schema: "https://opencode.ai/config.json",
       update: "disable",
+      agent: {
+        plan: {
+          mode: "primary",
+          permission: {
+            edit: "deny",
+            bash: "deny",
+            webfetch: "deny",
+          },
+        },
+      },
     };
     if (resolved.openCodeProvider) {
       config.model = resolved.openCodeProvider.model;
