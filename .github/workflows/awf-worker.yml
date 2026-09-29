@@ -123,7 +123,11 @@ jobs:
           test "$AWF_ATTEMPT_NO" -ge 1
           test -n "$AWF_MACHINE_ID"
           case "$AWF_MODEL" in opencode/*) ;; *) exit 64 ;; esac
-          test "$AWF_ARTIFACT_NAME" = "awf-attempt-$AWF_ATTEMPT_ID"
+          if [ "$AWF_MODE" = write ]; then
+            test "$AWF_ARTIFACT_NAME" = "awf-attempt-$AWF_ATTEMPT_ID"
+          else
+            test "$AWF_ARTIFACT_NAME" = "awf-review-$AWF_ATTEMPT_ID"
+          fi
           test "$AWF_TARGET_REPO" = "$AWF_TARGET_OWNER/$AWF_TARGET_NAME"
           case "$AWF_TARGET_REPO" in */*) ;; *) exit 64 ;; esac
           case "$AWF_TARGET_VISIBILITY" in public|private|internal) ;; *) exit 64 ;; esac
