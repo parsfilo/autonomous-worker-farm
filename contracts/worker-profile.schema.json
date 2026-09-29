@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/worker-profile.schema.json",
+  "title": "WorkerProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "archetype",
+    "description",
+    "read_only",
+    "default_sandbox_tier",
+    "allowed_write_profiles",
+    "default_permissions",
+    "allowed_modifiers"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "archetype": {
+      "enum": [
+        "scout",
+        "architect",
+        "builder",
+        "test-engineer",
+        "ci-doctor",
+        "quality-security",
+        "independent-reviewer",
+        "domain-specialist"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "read_only": {
+      "type": "boolean"
+    },
+    "default_sandbox_tier": {
+      "enum": [
+        "T0",
+        "T1",
+        "T2"
+      ]
+    },
+    "allowed_write_profiles": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "read-only",
+          "tests-only",
+          "scoped-code",
+          "protected-scope"
+        ]
+      }
+    },
+    "default_permissions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/permission"
+      }
+    },
+    "allowed_modifiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$"
+      }
+    },
+    "require_independent_review": {
+      "type": "boolean",
+      "default": false
+    },
+    "allow_subagents": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "$defs": {
+    "permission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "resource",
+        "effect"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "effect": {
+          "enum": [
+            "allow",
+            "deny",
+            "ask"
+          ]
+        }
+      }
+    }
+  }
+}

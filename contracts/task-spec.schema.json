@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/task-spec.schema.json",
+  "title": "TaskSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "project_id",
+    "repo_id",
+    "objective",
+    "acceptance_criteria",
+    "base_ref",
+    "base_sha",
+    "archetype",
+    "risk_class",
+    "read_scope",
+    "write_scope",
+    "protected_paths",
+    "denied_paths",
+    "network_profile",
+    "tool_profile",
+    "approved_skills",
+    "harness_requirements",
+    "model_requirements",
+    "timeout_seconds",
+    "lease_ttl_seconds",
+    "heartbeat_interval_seconds",
+    "max_attempts",
+    "evidence_requirements",
+    "quality_profile",
+    "review_policy",
+    "repo_passport_hash",
+    "context_snapshot_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "task_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "repo_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
+    },
+    "base_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "base_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "archetype": {
+      "enum": [
+        "scout",
+        "architect",
+        "builder",
+        "test-engineer",
+        "ci-doctor",
+        "quality-security",
+        "independent-reviewer",
+        "domain-specialist"
+      ]
+    },
+    "capability_modifiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$"
+      },
+      "default": []
+    },
+    "risk_class": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "PROTECTED"
+      ]
+    },
+    "read_scope": {
+      "$ref": "#/$defs/pathList"
+    },
+    "write_scope": {
+      "$ref": "#/$defs/pathList"
+    },
+    "protected_paths": {
+      "$ref": "#/$defs/pathList"
+    },
+    "denied_paths": {
+      "$ref": "#/$defs/pathList"
+    },
+    "network_profile": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "tool_profile": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "approved_skills": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/versionedRef"
+      }
+    },
+    "harness_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_capabilities"
+      ],
+      "properties": {
+        "allowed_adapters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "minimum_sandbox_tier": {
+          "enum": [
+            "T0",
+            "T1",
+            "T2"
+          ]
+        }
+      }
+    },
+    "model_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class"
+      ],
+      "properties": {
+        "class": {
+          "enum": [
+            "fast",
+            "coding",
+            "deep-reasoning",
+            "review",
+            "frontier"
+          ]
+        },
+        "provider_diversity_from_attempt_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "minimum_context_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "privacy_class": {
+          "enum": [
+            "public",
+            "private",
+            "restricted"
+          ]
+        }
+      }
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 86400
+    },
+    "lease_ttl_seconds": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 3600
+    },
+    "heartbeat_interval_seconds": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 300
+    },
+    "max_attempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "evidence_requirements": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "patch",
+          "candidate_hash",
+          "command_log",
+          "tests",
+          "lsp",
+          "semgrep",
+          "codacy",
+          "sonar",
+          "sandbox_attestation",
+          "network_events",
+          "policy_events",
+          "artifacts"
+        ]
+      }
+    },
+    "quality_profile": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "review_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "independent_review"
+      ],
+      "properties": {
+        "independent_review": {
+          "type": "boolean"
+        },
+        "require_provider_diversity": {
+          "type": "boolean",
+          "default": true
+        },
+        "human_approval_required": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "repo_passport_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "context_snapshot_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "causation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "correlation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    }
+  },
+  "$defs": {
+    "pathList": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "versionedRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

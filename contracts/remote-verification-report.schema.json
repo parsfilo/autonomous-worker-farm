@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/remote-verification-report.schema.json",
+  "title": "RemoteVerificationReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "provider", "task_id", "attempt_id", "repo_id",
+    "candidate_hash", "integration_artifact_hash", "expected_base_sha",
+    "expected_commit_sha", "base_ref", "observed_base_sha", "pr_number",
+    "pr_state", "pr_head_ref", "observed_pr_head_sha", "status",
+    "remote_checks", "observed_at", "observer", "report_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "provider": { "const": "github" },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "attempt_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "repo_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+    "candidate_hash": { "$ref": "#/$defs/sha256" },
+    "integration_artifact_hash": { "$ref": "#/$defs/sha256" },
+    "expected_base_sha": { "$ref": "#/$defs/gitSha" },
+    "expected_commit_sha": { "$ref": "#/$defs/gitSha" },
+    "base_ref": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "observed_base_sha": { "$ref": "#/$defs/gitSha" },
+    "pr_number": { "type": "integer", "minimum": 1 },
+    "pr_state": { "enum": ["OPEN", "CLOSED", "MERGED"] },
+    "pr_head_ref": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "observed_pr_head_sha": { "$ref": "#/$defs/gitSha" },
+    "status": { "enum": ["PASS", "PENDING", "BASE_DRIFT", "HEAD_MISMATCH", "QUALITY_FAILED", "EXTERNAL_BLOCKER"] },
+    "remote_checks": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "head_sha"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "status": { "enum": ["PASS", "FAIL", "PENDING", "ERROR"] },
+          "head_sha": { "$ref": "#/$defs/gitSha" }
+        }
+      }
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "observer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "build"],
+      "properties": {
+        "kind": { "const": "trusted-git-integrator" },
+        "build": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "report_hash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "gitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

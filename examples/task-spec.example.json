@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "task_id": "task-example-001",
+  "task_revision": 1,
+  "project_id": "autonom-worker-demo",
+  "repo_id": "example/example-repo",
+  "objective": "Implement a narrowly scoped bug fix and add a regression test.",
+  "acceptance_criteria": [
+    "Regression test fails before the fix and passes after it.",
+    "No files outside declared write scope are modified."
+  ],
+  "base_ref": "main",
+  "base_sha": "0123456789abcdef0123456789abcdef01234567",
+  "archetype": "builder",
+  "capability_modifiers": [
+    "lang:typescript",
+    "tool:node",
+    "write:scoped-code"
+  ],
+  "risk_class": "MEDIUM",
+  "read_scope": [
+    "**"
+  ],
+  "write_scope": [
+    "src/**",
+    "test/**"
+  ],
+  "protected_paths": [
+    ".github/workflows/**",
+    "infra/**"
+  ],
+  "denied_paths": [
+    ".env",
+    "**/.ssh/**"
+  ],
+  "network_profile": "package-registry",
+  "tool_profile": "typescript-node",
+  "approved_skills": [],
+  "harness_requirements": {
+    "allowed_adapters": [
+      "opencode"
+    ],
+    "required_capabilities": [
+      "noninteractive",
+      "permissions",
+      "hard-policy",
+      "evidence-export"
+    ],
+    "minimum_sandbox_tier": "T1"
+  },
+  "model_requirements": {
+    "class": "coding",
+    "minimum_context_tokens": 32000,
+    "privacy_class": "public"
+  },
+  "timeout_seconds": 1800,
+  "lease_ttl_seconds": 300,
+  "heartbeat_interval_seconds": 30,
+  "max_attempts": 3,
+  "evidence_requirements": [
+    "patch",
+    "candidate_hash",
+    "command_log",
+    "tests",
+    "semgrep",
+    "codacy",
+    "sonar",
+    "sandbox_attestation",
+    "policy_events"
+  ],
+  "quality_profile": "standard-typescript",
+  "review_policy": {
+    "independent_review": true,
+    "require_provider_diversity": true,
+    "human_approval_required": true
+  },
+  "repo_passport_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "context_snapshot_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "causation_id": null,
+  "correlation_id": "corr-example-001"
+}

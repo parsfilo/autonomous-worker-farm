@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/sandbox-attestation.schema.json",
+  "title": "SandboxAttestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "task_id",
+    "attempt_id",
+    "machine_id",
+    "status",
+    "tier",
+    "broker",
+    "sandbox",
+    "image_digest",
+    "started_at",
+    "request_hash",
+    "egress"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "machine_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "status": {
+      "enum": [
+        "PROVISIONED",
+        "REJECTED",
+        "FAILED",
+        "TERMINATED"
+      ]
+    },
+    "tier": {
+      "enum": [
+        "T0",
+        "T1",
+        "T2"
+      ]
+    },
+    "broker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "build"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "local-landlock",
+            "privileged-docker",
+            "future"
+          ]
+        },
+        "build": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "landlock_abi",
+        "container_runtime",
+        "user_namespace",
+        "seccomp",
+        "apparmor",
+        "cgroups",
+        "network_profile",
+        "network_enforced",
+        "remote_git_write_credential_present",
+        "docker_socket_present",
+        "host_home_mounted",
+        "process_uid",
+        "process_gid",
+        "capabilities_dropped",
+        "read_only_rootfs",
+        "no_new_privileges"
+      ],
+      "properties": {
+        "landlock_abi": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "container_runtime": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "user_namespace": {
+          "type": "boolean"
+        },
+        "seccomp": {
+          "type": "boolean"
+        },
+        "cgroups": {
+          "type": "boolean"
+        },
+        "network_enforced": {
+          "type": "boolean"
+        },
+        "remote_git_write_credential_present": {
+          "const": false
+        },
+        "docker_socket_present": {
+          "const": false
+        },
+        "host_home_mounted": {
+          "const": false
+        },
+        "process_uid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "capabilities_dropped": {
+          "const": true
+        },
+        "read_only_rootfs": {
+          "const": true
+        },
+        "no_new_privileges": {
+          "const": true
+        },
+        "process_gid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "apparmor": {
+          "type": "boolean"
+        },
+        "network_profile": {
+          "enum": [
+            "none",
+            "brokered"
+          ]
+        }
+      }
+    },
+    "image_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "container_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "exit_code": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "request_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "evidence_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rejection_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "details": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "egress": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "profile_hash",
+        "route_id",
+        "model",
+        "gateway_image_digest",
+        "gateway_container_id",
+        "worker_network_id",
+        "gateway_alias",
+        "llm_port",
+        "direct_egress_blocked",
+        "provider_secret_in_worker",
+        "attempt_token_scoped"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "profile_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "route_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "gateway_image_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "gateway_container_id": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 128
+        },
+        "worker_network_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "gateway_alias": {
+          "const": "awf-egress"
+        },
+        "llm_port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        },
+        "direct_egress_blocked": {
+          "const": true
+        },
+        "provider_secret_in_worker": {
+          "const": false
+        },
+        "attempt_token_scoped": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "sandbox": {
+            "properties": {
+              "network_profile": {
+                "const": "none"
+              }
+            },
+            "required": [
+              "network_profile"
+            ],
+            "type": "object"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "egress": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "sandbox": {
+            "properties": {
+              "network_profile": {
+                "const": "brokered"
+              }
+            },
+            "required": [
+              "network_profile"
+            ],
+            "type": "object"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "egress": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ]
+}

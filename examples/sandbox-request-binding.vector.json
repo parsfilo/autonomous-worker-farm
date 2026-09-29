@@ -1,0 +1,57 @@
+{
+  "request": {
+    "schema_version": "1.0",
+    "request_id": "req-binding-001",
+    "task_id": "task-binding-001",
+    "attempt_id": "attempt-binding-001",
+    "machine_id": "production-vps",
+    "tier": "T1",
+    "run_root": "/var/lib/autonomous-worker/runs/attempt-binding-001",
+    "workspace": {
+      "source": "/var/lib/autonomous-worker/runs/attempt-binding-001/repo",
+      "mount_path": "/workspace",
+      "read_only": false,
+      "base_sha": "0123456789abcdef0123456789abcdef01234567",
+      "controller_gid": 1000
+    },
+    "image": {
+      "reference": "autonomous-worker-runtime",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "network": {
+      "profile": "none",
+      "egress_profile_id": null,
+      "egress_profile_hash": null,
+      "route_id": null,
+      "model": null
+    },
+    "resources": {
+      "cpu": 1.5,
+      "memory_bytes": 1073741824,
+      "pids": 256,
+      "tmpfs_bytes": 268435456,
+      "timeout_seconds": 1800
+    },
+    "command": {
+      "argv": [
+        "opencode",
+        "run",
+        "--standalone",
+        "--format",
+        "json",
+        "--file",
+        "control/task.md",
+        "Execute the task described in the attached task file. Work only in repo/."
+      ],
+      "env_allowlist": [
+        "HOME",
+        "TMPDIR"
+      ]
+    },
+    "policy_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "expires_at": "2026-09-28T02:00:00Z",
+    "workspace_lease_id": "lease-binding-001",
+    "workspace_lease_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "expected_hash": "eeb04a3bc001b5030cc95b886944a6a22c9cc9f44b1af39b28847da4609e1400"
+}

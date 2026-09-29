@@ -1,0 +1,9 @@
+**
+!broker/
+!broker/**
+!containers/
+!containers/egress-gateway.Dockerfile
+!containers/worker.Dockerfile
+!containers/worker-toolchain/
+!containers/worker-toolchain/package.json
+!containers/worker-toolchain/package-lock.json

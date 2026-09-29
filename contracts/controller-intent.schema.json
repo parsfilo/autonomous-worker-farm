@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/controller-intent.schema.json",
+  "title": "ControllerIntent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "intent_id",
+    "kind",
+    "idempotency_key",
+    "actor",
+    "expected_revision",
+    "correlation_id",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "intent_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "kind": {
+      "enum": [
+        "SUBMIT_PLAN",
+        "SPAWN",
+        "RETRY",
+        "CANCEL",
+        "REQUEST_REVIEW",
+        "REQUEST_PR",
+        "REQUEST_MERGE"
+      ]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "id"
+      ],
+      "properties": {
+        "class": {
+          "enum": [
+            "HUMAN",
+            "MASTER"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "causation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

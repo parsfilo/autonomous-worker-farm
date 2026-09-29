@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "repo_id": "example/example-repo",
+  "visibility": "public",
+  "trust_tier": "MEDIUM",
+  "default_branch": "main",
+  "protected_paths": [
+    ".github/workflows/**",
+    "infra/**",
+    "security/**"
+  ],
+  "generated_paths": [
+    "dist/**",
+    "coverage/**"
+  ],
+  "vendor_paths": [
+    "vendor/**"
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "frameworks": [
+    "node"
+  ],
+  "allowed_build_commands": [
+    [
+      "pnpm",
+      "build"
+    ]
+  ],
+  "allowed_test_commands": [
+    [
+      "pnpm",
+      "test",
+      "--",
+      "--runInBand"
+    ]
+  ],
+  "quality": {
+    "format": {
+      "required": true,
+      "profile": "pnpm-format-check"
+    },
+    "lint": {
+      "required": true,
+      "profile": "pnpm-lint"
+    },
+    "typecheck": {
+      "required": true,
+      "profile": "pnpm-typecheck"
+    },
+    "build": {
+      "required": true,
+      "profile": "pnpm-build"
+    },
+    "tests": {
+      "required": true,
+      "profile": "pnpm-test"
+    },
+    "secret_scan": {
+      "required": true,
+      "profile": "default"
+    },
+    "semgrep": {
+      "required": true,
+      "profile": "security-high-confidence"
+    },
+    "codacy": {
+      "required": true,
+      "profile": "cli-json"
+    },
+    "sonar": {
+      "required": true,
+      "profile": "new-code-gate"
+    }
+  },
+  "network_profiles": [
+    "none",
+    "package-registry",
+    "official-docs"
+  ],
+  "max_parallel_tasks": 4,
+  "max_open_prs": 2,
+  "allowed_harnesses": [
+    "opencode"
+  ],
+  "allowed_model_classes": [
+    "fast",
+    "coding",
+    "deep-reasoning",
+    "review"
+  ],
+  "independent_review_required": true,
+  "merge_method": "squash",
+  "post_merge_checks": [
+    "default-branch-ci"
+  ],
+  "policy_revision": 1
+}

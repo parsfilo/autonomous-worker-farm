@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/sandbox-request.schema.json",
+  "title": "SandboxRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "task_id",
+    "attempt_id",
+    "machine_id",
+    "tier",
+    "run_root",
+    "workspace",
+    "image",
+    "network",
+    "resources",
+    "command",
+    "policy_hash",
+    "expires_at",
+    "workspace_lease_id",
+    "workspace_lease_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "machine_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "tier": {
+      "enum": [
+        "T0",
+        "T1",
+        "T2"
+      ]
+    },
+    "run_root": {
+      "type": "string",
+      "pattern": "^/var/lib/autonomous-worker/runs/[A-Za-z0-9._:-]+$"
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "mount_path",
+        "read_only",
+        "base_sha",
+        "controller_gid"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "mount_path": {
+          "const": "/workspace"
+        },
+        "read_only": {
+          "type": "boolean"
+        },
+        "base_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "controller_gid": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference",
+        "digest"
+      ],
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "egress_profile_id",
+        "egress_profile_hash",
+        "route_id",
+        "model"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "none",
+            "brokered"
+          ]
+        },
+        "egress_profile_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "egress_profile_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "route_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "none"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "egress_profile_id": {
+                "type": "null"
+              },
+              "egress_profile_hash": {
+                "type": "null"
+              },
+              "route_id": {
+                "type": "null"
+              },
+              "model": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "brokered"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "egress_profile_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+              },
+              "egress_profile_hash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "route_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
+        }
+      ]
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cpu",
+        "memory_bytes",
+        "pids",
+        "tmpfs_bytes",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "cpu": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 64
+        },
+        "memory_bytes": {
+          "type": "integer",
+          "minimum": 67108864
+        },
+        "pids": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 4096
+        },
+        "tmpfs_bytes": {
+          "type": "integer",
+          "minimum": 16777216
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "argv",
+        "env_allowlist"
+      ],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12,
+          "prefixItems": [
+            {
+              "const": "opencode"
+            },
+            {
+              "const": "run"
+            },
+            {
+              "const": "--standalone"
+            },
+            {
+              "const": "--format"
+            },
+            {
+              "const": "json"
+            },
+            {
+              "const": "--agent"
+            },
+            {
+              "const": "build"
+            },
+            {
+              "const": "--title"
+            },
+            {
+              "const": "AWF Worker"
+            },
+            {
+              "const": "--file"
+            },
+            {
+              "const": "control/task.md"
+            },
+            {
+              "const": "Execute the task described in the attached task file. Work only in repo/."
+            }
+          ],
+          "items": false
+        },
+        "env_allowlist": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$"
+          }
+        }
+      }
+    },
+    "policy_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workspace_lease_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "workspace_lease_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

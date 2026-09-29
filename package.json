@@ -1,0 +1,41 @@
+{
+  "name": "autonomous-worker-controller",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "pnpm clean && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate:contracts": "python3 scripts/validate_contracts.py",
+    "mcp:stdio": "tsx src/mcp/server.ts",
+    "check": "pnpm build:native && pnpm validate:contracts && pnpm typecheck && pnpm test && pnpm check:broker && pnpm check:containers && pnpm check:deploy && pnpm check:opencode && pnpm check:github-actions",
+    "build:native": "sh scripts/build_native.sh",
+    "probe:machine": "tsx src/cli/register-machine.ts",
+    "clean": "rm -rf dist",
+    "check:broker": "sh scripts/check_broker.sh",
+    "check:opencode": "sh scripts/conformance_opencode.sh",
+    "check:containers": "python3 scripts/check_container_toolchains.py",
+    "check:deploy": "python3 scripts/check_deploy_artifacts.py",
+    "mcp:http": "tsx src/cli/controller-mcp-http.ts",
+    "check:github-actions": "python3 scripts/check_github_actions_worker.py"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.1.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "minimatch": "10.2.6",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  }
+}

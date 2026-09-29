@@ -1,0 +1,52 @@
+{
+  "profile": {
+    "schema_version": "1.0",
+    "profile_id": "opencode-free",
+    "revision": 1,
+    "gateway_image": {
+      "reference": "autonomous-worker-egress-gateway",
+      "digest": "sha256:cf0fa7f2e762b3613a3eb00f34128830af2a93fbbffd39674d630728bd16146a"
+    },
+    "internal_network": {
+      "gateway_alias": "awf-egress",
+      "llm_port": 8443,
+      "http_proxy_port": 8888,
+      "direct_egress_denied": true
+    },
+    "routes": [
+      {
+        "route_id": "opencode-free",
+        "provider_id": "opencode",
+        "protocol": "opencode-free-connect",
+        "upstream_base_url": "https://opencode.ai",
+        "worker_base_path": "/",
+        "worker_auth": {
+          "kind": "none",
+          "header_name": "",
+          "secret_file": null
+        },
+        "upstream_auth": {
+          "kind": "none",
+          "header_name": ""
+        },
+        "secret_handle": null,
+        "models": [
+          "opencode/*"
+        ],
+        "request_path_prefixes": []
+      }
+    ],
+    "package_proxy": {
+      "enabled": false,
+      "allowed_hosts": [],
+      "allowed_ports": []
+    },
+    "limits": {
+      "max_request_bytes": 8388608,
+      "max_response_bytes": 67108864,
+      "max_concurrent_requests": 4
+    },
+    "policy_revision": 1
+  },
+  "expected_hash": "c13cd6838d0e67ef9d0b84626e67d0cd8a15c0018d717b3cdd67e71aba4238d0"
+}

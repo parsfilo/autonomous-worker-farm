@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/github-merge-receipt.schema.json",
+  "title": "GitHubMergeReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "provider", "repo_id", "task_id", "attempt_id",
+    "pr_number", "integration_artifact_hash", "remote_verification_report_hash",
+    "expected_head_sha", "merge_method", "merge_sha", "observed_base_sha",
+    "base_head_matches_merge", "merged_at", "observer", "receipt_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "provider": { "const": "github" },
+    "repo_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "attempt_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "pr_number": { "type": "integer", "minimum": 1 },
+    "integration_artifact_hash": { "$ref": "#/$defs/sha256" },
+    "remote_verification_report_hash": { "$ref": "#/$defs/sha256" },
+    "expected_head_sha": { "$ref": "#/$defs/gitSha" },
+    "merge_method": { "enum": ["squash", "merge", "rebase"] },
+    "merge_sha": { "$ref": "#/$defs/gitSha" },
+    "observed_base_sha": {
+      "oneOf": [
+        { "$ref": "#/$defs/gitSha" },
+        { "type": "null" }
+      ]
+    },
+    "base_head_matches_merge": {
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "merged_at": { "type": "string", "format": "date-time" },
+    "observer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "build"],
+      "properties": {
+        "kind": { "const": "trusted-git-integrator" },
+        "build": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "receipt_hash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "gitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

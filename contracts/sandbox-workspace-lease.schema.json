@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/sandbox-workspace-lease.schema.json",
+  "title": "SandboxWorkspaceLease",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "lease_id",
+    "attempt_id",
+    "machine_id",
+    "controller_uid",
+    "controller_gid",
+    "paths",
+    "created_at",
+    "expires_at",
+    "broker_build",
+    "immutable_parent",
+    "lease_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "lease_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "machine_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "controller_uid": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_root",
+        "repo",
+        "control",
+        "artifacts"
+      ],
+      "properties": {
+        "run_root": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "control": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "artifacts": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "broker_build": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "immutable_parent": {
+      "const": true
+    },
+    "lease_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "controller_gid": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

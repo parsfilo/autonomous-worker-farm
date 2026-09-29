@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "target_platform": "linux/amd64",
+  "node": {
+    "image": "node:24.19.0-bookworm-slim",
+    "index_digest": "sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
+    "amd64_manifest_digest": "sha256:e5a8dee7bc1e6a215d224a7ef8206f7e77271bc3cabd5febf2beafac0674f174"
+  },
+  "opencode": {
+    "package": "@opencode/cli",
+    "version": "2.0.18",
+    "integrity": "sha512-EkIxIa2goJ2v8U3Os2gpRckOIjN9gpUBXy6fyVOFbPZl71rkGpoF3NFsm4nlDiF2BgnIqcgJU5NgdV1k6/OZuw==",
+    "native_package": "@opencode/cli-linux-x64",
+    "native_integrity": "sha512-94dH7lwB+tpmzI1/NIfzFxLBIeshZSNtyx2sskL0C0kgYjMaiVMIHvQLYIECUOWSuVz5/dH/KPUIOGn7ML311g=="
+  },
+  "pnpm": {
+    "package": "pnpm",
+    "version": "12.4.2",
+    "integrity": "sha512-CK3GYTGAJ1x8ntraOdzwjJxhrU5+rzMKTzRh8QKw+QdCNFTRF/mOctR/7wYWBwZE17/8lzpqV/UJCm18NosHyQ==",
+    "native_package": "@pnpm/exe.linux-x64",
+    "native_integrity": "sha512-/pbt0UVTa8NMDhzOWLQRfZ6G9ROKXlJPZtx845BqyWfc7hCrWXhTLBd70yO2y8+E+IWN3oHM1s/JsIQNGk1yvg=="
+  }
+}

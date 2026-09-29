@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/post-merge-verification-report.schema.json",
+  "title": "PostMergeVerificationReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "provider", "task_id", "attempt_id", "repo_id",
+    "merge_receipt_hash", "merge_sha", "required_checks", "observed_checks",
+    "status", "observed_at", "observer", "report_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "provider": { "const": "github" },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "attempt_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "repo_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+    "merge_receipt_hash": { "$ref": "#/$defs/sha256" },
+    "merge_sha": { "$ref": "#/$defs/gitSha" },
+    "required_checks": {
+      "type": "array", "maxItems": 256, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 256 }
+    },
+    "observed_checks": {
+      "type": "array", "maxItems": 512,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "status", "head_sha"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "status": { "enum": ["PASS", "FAIL", "PENDING", "ERROR"] },
+          "head_sha": { "$ref": "#/$defs/gitSha" }
+        }
+      }
+    },
+    "status": { "enum": ["PASS", "PENDING", "QUALITY_FAILED", "EXTERNAL_BLOCKER"] },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "observer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "build"],
+      "properties": {
+        "kind": { "const": "trusted-git-integrator" },
+        "build": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "report_hash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "gitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

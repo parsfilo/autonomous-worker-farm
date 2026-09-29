@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "task_id": "task-example-001",
+  "attempt_id": "attempt-example-001",
+  "attempt_no": 1,
+  "base_sha": "0123456789abcdef0123456789abcdef01234567",
+  "repo_passport_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "context_snapshot_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "machine": {
+    "machine_id": "worker-01",
+    "os": "linux",
+    "kernel": "example"
+  },
+  "sandbox": {
+    "tier": "T1",
+    "attested": true,
+    "landlock_abi": 8,
+    "container_runtime": "podman",
+    "container_image_digest": null
+  },
+  "harness": {
+    "adapter": "opencode",
+    "version": "PINNED_AT_RUNTIME",
+    "digest": null,
+    "session_id": "session-example"
+  },
+  "model": {
+    "provider": "example-provider",
+    "model": "example-model",
+    "request_ids": []
+  },
+  "approved_skills": [],
+  "tool_versions": {
+    "semgrep": "PINNED_AT_RUNTIME",
+    "codacy": "PINNED_AT_RUNTIME",
+    "sonar-scanner": "PINNED_AT_RUNTIME"
+  },
+  "started_at": "2026-09-28T00:00:00Z",
+  "ended_at": "2026-09-28T00:05:00Z",
+  "status": "SUCCEEDED",
+  "changed_files": [
+    "src/example.ts",
+    "test/example.test.ts"
+  ],
+  "patch_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "candidate_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "candidate_commit_sha": null,
+  "commands": [
+    {
+      "argv": [
+        "pnpm",
+        "test",
+        "--",
+        "--runInBand"
+      ],
+      "cwd": "repo",
+      "exit_code": 0,
+      "duration_ms": 12000,
+      "stdout_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "stderr_sha256": null
+    }
+  ],
+  "checks": {
+    "format": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": null,
+      "details": null
+    },
+    "lint": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": null,
+      "details": null
+    },
+    "typecheck": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": null,
+      "details": null
+    },
+    "build": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": null,
+      "details": null
+    },
+    "secret_scan": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": null,
+      "details": null
+    }
+  },
+  "tests": [
+    {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "report_uri": "artifact://tests.json",
+      "details": null
+    }
+  ],
+  "lsp_diagnostics": [],
+  "quality": {
+    "semgrep": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": "artifact://semgrep.json",
+      "details": null
+    },
+    "codacy": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": "artifact://codacy.json",
+      "details": {
+        "missing_analyzers": []
+      }
+    },
+    "sonar": {
+      "status": "PASS",
+      "exit_code": 0,
+      "report_sha256": null,
+      "report_uri": "artifact://sonar-gate.json",
+      "details": null
+    }
+  },
+  "policy_events": [],
+  "network_events": [],
+  "artifacts": [
+    {
+      "name": "patch",
+      "uri": "artifact://candidate.patch",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "media_type": "text/x-diff"
+    }
+  ],
+  "summary": "Example only."
+}

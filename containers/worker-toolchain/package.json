@@ -1,0 +1,13 @@
+{
+  "name": "awf-worker-toolchain",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@opencode/cli": "2.0.18",
+    "pnpm": "12.4.2"
+  },
+  "allowScripts": {
+    "@opencode/cli@2.0.18": true,
+    "pnpm@12.4.2": true
+  }
+}

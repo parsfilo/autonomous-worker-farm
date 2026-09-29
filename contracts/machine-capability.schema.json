@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/machine-capability.schema.json",
+  "title": "MachineCapability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "machine_id",
+    "online",
+    "os",
+    "architecture",
+    "cpu_logical",
+    "memory_bytes",
+    "disk_free_bytes",
+    "sandbox",
+    "harnesses",
+    "tools",
+    "tool_profiles",
+    "network_profiles",
+    "model_classes",
+    "max_slots",
+    "trust_ceiling"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "machine_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "online": {
+      "type": "boolean"
+    },
+    "os": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "architecture": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "kernel": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "cpu_logical": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "memory_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "disk_free_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "landlock",
+        "rootless_container",
+        "cgroups",
+        "seccomp",
+        "network_policy"
+      ],
+      "properties": {
+        "landlock": {
+          "type": "boolean"
+        },
+        "landlock_abi": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "rootless_container": {
+          "type": "boolean"
+        },
+        "container_runtime": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "cgroups": {
+          "type": "boolean"
+        },
+        "seccomp": {
+          "type": "boolean"
+        },
+        "network_policy": {
+          "type": "boolean"
+        }
+      }
+    },
+    "harnesses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "adapter",
+          "version",
+          "healthy",
+          "capabilities"
+        ],
+        "properties": {
+          "adapter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "digest": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "healthy": {
+            "type": "boolean"
+          },
+          "capabilities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "tool_profiles": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "network_profiles": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "model_classes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "fast",
+          "coding",
+          "deep-reasoning",
+          "review",
+          "frontier"
+        ]
+      }
+    },
+    "max_slots": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "active_slots": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000,
+      "default": 0
+    },
+    "trust_ceiling": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "PROTECTED"
+      ]
+    },
+    "last_probe_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "disk_total_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "disk_used_percent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}

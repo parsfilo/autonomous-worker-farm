@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/git-integration-artifact.schema.json",
+  "title": "GitIntegrationArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "strategy", "task_id", "attempt_id", "repo_id",
+    "base_sha", "candidate_hash", "patch_sha256", "changed_files",
+    "tree_sha", "commit_sha", "author", "committer", "message_sha256", "artifact_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "strategy": { "const": "deterministic-commit-v1" },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "attempt_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "repo_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+    "base_sha": { "$ref": "#/$defs/gitSha" },
+    "candidate_hash": { "$ref": "#/$defs/sha256" },
+    "patch_sha256": { "$ref": "#/$defs/sha256" },
+    "changed_files": {
+      "type": "array", "minItems": 1, "maxItems": 10000,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1024 }
+    },
+    "tree_sha": { "$ref": "#/$defs/gitSha" },
+    "commit_sha": { "$ref": "#/$defs/gitSha" },
+    "author": { "$ref": "#/$defs/identity" },
+    "committer": { "$ref": "#/$defs/identity" },
+    "message_sha256": { "$ref": "#/$defs/sha256" },
+    "artifact_hash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "gitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "email", "timestamp"],
+      "properties": {
+        "name": { "const": "Autonomous Worker Controller" },
+        "email": { "const": "controller@autonomous-worker.invalid" },
+        "timestamp": { "const": "2000-01-01T00:00:00Z" }
+      }
+    }
+  }
+}

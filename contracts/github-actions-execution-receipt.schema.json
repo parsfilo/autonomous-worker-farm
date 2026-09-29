@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/github-actions-execution-receipt.schema.json",
+  "title": "GitHubActionsExecutionReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "backend", "task_id", "attempt_id", "machine_id",
+    "worker_repo", "workflow", "dispatch_ref", "workflow_run_id",
+    "run_attempt", "run_url", "runner_environment", "status", "conclusion",
+    "started_at", "completed_at", "artifact_id", "artifact_name",
+    "artifact_digest", "receipt_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "backend": { "const": "github-actions" },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "attempt_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "machine_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "worker_repo": { "type": "string", "pattern": "^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$" },
+    "workflow": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "dispatch_ref": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "workflow_run_id": { "type": "integer", "minimum": 1 },
+    "run_attempt": { "type": "integer", "minimum": 1 },
+    "run_url": { "type": "string", "format": "uri", "maxLength": 2048 },
+    "runner_environment": { "const": "github-hosted" },
+    "status": { "const": "completed" },
+    "conclusion": { "const": "success" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "artifact_id": { "type": "integer", "minimum": 1 },
+    "artifact_name": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "artifact_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "workflow_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "oidc_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "receipt_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

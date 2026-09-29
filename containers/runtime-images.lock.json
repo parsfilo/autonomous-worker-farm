@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "validated_on": "2026-09-28",
+  "platform": "linux/amd64",
+  "build_policy": {
+    "buildx_git_info": false,
+    "provenance": false
+  },
+  "worker": {
+    "reference": "autonomous-worker-runtime",
+    "tag": "opencode-2.0.18",
+    "digest": "sha256:83afc01a058755875502fe11809c93a4636ba23356be6abaa29d07a5ae12eb63",
+    "size_bytes": 846542563,
+    "user": "65532:65532",
+    "source_hashes": {
+      "dockerfile_sha256": "034f23d034527d005e758a4fea919235f926a34f662cfc136773eadea88cfd9b",
+      "toolchain_lock_sha256": "d1efcdffec55f67ececea30ec2e310dd6de273761679755183fd8e321ff8e4ad",
+      "package_json_sha256": "b856395189c2a7c3a8689fe4bb65d880ff167e6f68f9385fe47fd74bc3734a20",
+      "package_lock_sha256": "03aaff12409c1923d7ae3f44244ad27c1b2982c2cbb044bcab6d310acbcd6381",
+      "dockerignore_sha256": "456f94cfdba46298097de31a2b311e48b728d4e6c0f044ccaa748d88e52730c7"
+    },
+    "toolchain": {
+      "node": "24.19.0",
+      "opencode": "2.0.18",
+      "pnpm": "12.4.2",
+      "git": "2.39.5",
+      "ripgrep": "13.0.0"
+    },
+    "conformance": {
+      "non_root_runtime": true,
+      "writable_ephemeral_home": true,
+      "locked_native_toolchain": true,
+      "target_repo_config_quarantined": true,
+      "file_backed_gateway_token": true,
+      "git_safe_directory": true
+    }
+  },
+  "gateway": {
+    "reference": "autonomous-worker-egress-gateway",
+    "tag": "20260928",
+    "digest": "sha256:cf0fa7f2e762b3613a3eb00f34128830af2a93fbbffd39674d630728bd16146a",
+    "size_bytes": 11059352,
+    "user": "65532:65532",
+    "source_hashes": {
+      "dockerfile_sha256": "ec1fe1d757c5b203c33c5e6fa263828ac6907ef80cd2d43a2e479be39cbb4cc0",
+      "main_go_sha256": "c0e088204b153927aa2635f69db2f3cdb97f21ec78f821866e49654e502ca631",
+      "gateway_go_sha256": "60f6867d4d46769aa73ec3c61ae70628e3d99476773b9708978284bde5771412",
+      "connect_proxy_go_sha256": "bd893b8c9222e30cd7428a707640be81d925db7ad5b2abd656673aa77c495da8",
+      "go_mod_sha256": "a6e18f358e1a68ad1ed19ed29bfc373e22a24bace28bf8aa6103c4ab77a66d55",
+      "dockerignore_sha256": "456f94cfdba46298097de31a2b311e48b728d4e6c0f044ccaa748d88e52730c7"
+    },
+    "conformance": {
+      "non_root_runtime": true,
+      "scratch_final_image": true,
+      "static_binary": true,
+      "help_smoke": true,
+      "opencode_free_connect": true,
+      "connect_target_pinned_to_opencode_ai_443": true,
+      "buffered_connect_payload_preserved": true,
+      "keyless_free_model_e2e": true,
+      "worker_direct_egress_blocked": true
+    }
+  }
+}

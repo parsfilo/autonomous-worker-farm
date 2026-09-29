@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/task-state-event.schema.json",
+  "title": "TaskStateEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "task_id",
+    "attempt_id",
+    "from_state",
+    "to_state",
+    "reason_code",
+    "actor_class",
+    "at",
+    "correlation_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "attempt_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "from_state": {
+      "$ref": "#/$defs/state"
+    },
+    "to_state": {
+      "$ref": "#/$defs/state"
+    },
+    "reason_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "actor_class": {
+      "enum": [
+        "HUMAN",
+        "MASTER",
+        "CONTROLLER",
+        "WORKER",
+        "REVIEWER",
+        "SYSTEM"
+      ]
+    },
+    "actor_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "causation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "authoritative_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "details": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "$defs": {
+    "state": {
+      "enum": [
+        "CREATED",
+        "PLANNED",
+        "READY",
+        "LEASED",
+        "PROVISIONING",
+        "RUNNING",
+        "EVIDENCE_COLLECT",
+        "LOCAL_VERIFY",
+        "CANDIDATE",
+        "INDEPENDENT_REVIEW",
+        "REMOTE_VERIFY",
+        "READY_TO_MERGE",
+        "MERGING",
+        "POST_MERGE_VERIFY",
+        "DONE",
+        "NO_CAPACITY",
+        "MACHINE_OFFLINE",
+        "MODEL_RATE_LIMITED",
+        "HARNESS_FAILED",
+        "POLICY_VIOLATION",
+        "TEST_FAILED",
+        "QUALITY_FAILED",
+        "REVIEW_BLOCKED",
+        "BASE_DRIFT",
+        "EXTERNAL_BLOCKER",
+        "LOST",
+        "CANCELLED"
+      ]
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-worker.local/schemas/harness-capability.schema.json",
+  "title": "HarnessCapability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "adapter",
+    "version",
+    "capabilities",
+    "repo_config_quarantine",
+    "production_state"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "adapter": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "noninteractive",
+          "structured-output",
+          "mcp",
+          "model-override",
+          "permissions",
+          "hard-policy",
+          "session-resume",
+          "sandbox-wrapper",
+          "event-stream",
+          "cancel",
+          "evidence-export"
+        ]
+      }
+    },
+    "repo_config_quarantine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supported",
+        "strategy"
+      ],
+      "properties": {
+        "supported": {
+          "type": "boolean"
+        },
+        "strategy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      }
+    },
+    "production_state": {
+      "enum": [
+        "DISABLED",
+        "LAB",
+        "CANARY",
+        "PRODUCTION",
+        "DEGRADED",
+        "QUARANTINED"
+      ]
+    },
+    "last_conformance_test_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}
