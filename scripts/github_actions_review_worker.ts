@@ -176,7 +176,7 @@ async function runReviewer(input: {
           "--user", String(uid) + ":" + String(gid),
           "--mount", "type=bind,src=" + input.repoPath + ",dst=/run/repo,readonly",
           "--mount", "type=bind,src=" + input.controlDir + ",dst=/run/control,readonly",
-          "--mount", "type=bind,src=" + input.artifactDir + ",dst=/run/artifacts,rw",
+          "--mount", "type=bind,src=" + input.artifactDir + ",dst=/run/artifacts",
           "--env", "HOME=/tmp/home",
           "--env", "XDG_CONFIG_HOME=/tmp/.config",
           "--env", "XDG_CACHE_HOME=/tmp/.cache",
