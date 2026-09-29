@@ -114,13 +114,29 @@ export function parseOpenCodeReviewOutput(stdout: string): ParsedOpenCodeReview 
         }
       }
     }
-    if (candidates.length === 1) {
-      parsed = candidates[0];
+    const validReviewCandidates = candidates.filter((candidate) => {
+      try {
+        parseOpenCodeReviewOutput(
+          JSON.stringify({ type: "text", part: { type: "text", text: JSON.stringify(candidate) } }) + "\n",
+        );
+        return true;
+      } catch (error) {
+        return !(error instanceof ControllerError) || error.code !== "REVIEW_OUTPUT_INVALID"
+          ? (() => { throw error; })()
+          : false;
+      }
+    });
+    if (validReviewCandidates.length === 1) {
+      parsed = validReviewCandidates[0];
     } else {
       throw new ControllerError(
         "REVIEW_OUTPUT_INVALID",
-        "Review text payload must contain exactly one unambiguous JSON object",
-        { excerpt: raw.slice(0, 512), candidateObjects: candidates.length },
+        "Review text payload must contain exactly one unambiguous schema-valid review object",
+        {
+          excerpt: raw.slice(0, 512),
+          candidateObjects: candidates.length,
+          validReviewObjects: validReviewCandidates.length,
+        },
       );
     }
   }
