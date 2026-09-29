@@ -156,6 +156,7 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --omit=dev --no-audit --no-fund --ignore-scripts
+          npm explore @opencode/cli -- npm run postinstall
           test "$(./node_modules/.bin/opencode --version)" = "opencode v2.0.18"
           test "$(./node_modules/.bin/pnpm --version)" = "12.4.2"
 
