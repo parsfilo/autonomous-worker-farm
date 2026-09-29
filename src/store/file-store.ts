@@ -132,6 +132,7 @@ export interface StoredReviewRun {
   github_actions_execution?: GitHubActionsExecutionReceipt | null;
   machine_id?: string | null;
   model?: { provider: "opencode"; model: string } | null;
+  excluded_models?: string[];
   leased_at?: string | null;
   expires_at?: string | null;
   request_id?: string | null;

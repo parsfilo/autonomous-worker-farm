@@ -108,12 +108,21 @@ export function renderOpenCodeAttemptConfig(
         "readOnlyReviewMode requires independent-reviewer with empty write_scope",
       );
     }
+    const reviewModel = resolved.openCodeProvider?.model ?? resolved.model;
+    if (!reviewModel) {
+      throw new ControllerError(
+        "REVIEW_MODEL_REQUIRED",
+        "Read-only OpenCode review requires an exact Controller-selected model binding",
+      );
+    }
     const config: Record<string, unknown> = {
       $schema: "https://opencode.ai/config.json",
       update: "disable",
+      model: reviewModel,
       agent: {
         plan: {
           mode: "primary",
+          model: reviewModel,
           permission: {
             edit: "deny",
             bash: "deny",
@@ -123,10 +132,7 @@ export function renderOpenCodeAttemptConfig(
       },
     };
     if (resolved.openCodeProvider) {
-      config.model = resolved.openCodeProvider.model;
       config.providers = resolved.openCodeProvider.providers;
-    } else if (resolved.model) {
-      config.model = resolved.model;
     }
     return {
       config,

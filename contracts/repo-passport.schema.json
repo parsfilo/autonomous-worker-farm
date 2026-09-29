@@ -189,7 +189,8 @@
       "enum": [
         "squash",
         "merge",
-        "rebase"
+        "rebase",
+        "fast-forward"
       ]
     },
     "post_merge_checks": {

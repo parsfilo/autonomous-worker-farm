@@ -1523,10 +1523,171 @@ export class ControllerCore {
     });
   }
 
+  retryReview(
+    failedReviewId: string,
+    correlationId: string,
+    actorId: string,
+    currentWorkflowSha?: string,
+  ): StoredReviewRun {
+    return this.#store.mutate((snapshot) => {
+      const failed = snapshot.reviews[failedReviewId];
+      if (!failed) {
+        throw new ControllerError(
+          "REVIEW_NOT_FOUND",
+          "Review " + failedReviewId + " was not found",
+        );
+      }
+      if (failed.state !== "FAILED") {
+        throw new ControllerError(
+          "REVIEW_RETRY_NOT_READY",
+          "Only a FAILED independent review may be retried",
+          { state: failed.state },
+        );
+      }
+      const task = snapshot.tasks[failed.task_id];
+      if (!task || task.state !== "INDEPENDENT_REVIEW") {
+        throw new ControllerError(
+          "REVIEW_TASK_STATE_INVALID",
+          "Task is not awaiting independent review",
+          { state: task?.state ?? null },
+        );
+      }
+      const source = snapshot.attempts[failed.source_attempt_id];
+      if (
+        !source?.result_manifest ||
+        source.state !== "CANDIDATE" ||
+        source.result_manifest.candidate_hash !== failed.candidate_hash ||
+        source.result_manifest.patch_sha256 !== failed.patch_sha256
+      ) {
+        throw new ControllerError(
+          "REVIEW_SOURCE_DRIFT",
+          "Source candidate evidence changed or disappeared before review retry",
+        );
+      }
+
+      const related = Object.values(snapshot.reviews).filter(
+        (entry) =>
+          entry.task_id === failed.task_id &&
+          entry.source_attempt_id === failed.source_attempt_id &&
+          entry.candidate_hash === failed.candidate_hash,
+      );
+      const active = related.find((entry) =>
+        ["READY", "LEASED", "PROVISIONING", "RUNNING"].includes(entry.state),
+      );
+      if (active) {
+        throw new ControllerError(
+          "REVIEW_RETRY_CONFLICT",
+          "Another independent review attempt is already active for this candidate",
+          { reviewId: active.review_id, state: active.state },
+        );
+      }
+      if (currentWorkflowSha !== undefined && !/^[0-9a-f]{40}$/.test(currentWorkflowSha)) {
+        throw new ControllerError(
+          "GITHUB_ACTIONS_WORKFLOW_SHA_INVALID",
+          "Current GitHub Actions workflow SHA must be canonical",
+        );
+      }
+      const workflowUpdateRecovery =
+        related.length >= task.spec.max_attempts &&
+        currentWorkflowSha !== undefined &&
+        failed.execution_backend === "github-actions" &&
+        failed.failure_reason === "GITHUB_ACTIONS_REVIEW_RUN_FAILED" &&
+        failed.github_actions_dispatch !== undefined &&
+        failed.github_actions_dispatch !== null &&
+        failed.github_actions_dispatch.workflow_sha !== currentWorkflowSha &&
+        !related.some(
+          (entry) => entry.github_actions_dispatch?.workflow_sha === currentWorkflowSha,
+        );
+      const hasWorkflowUpdateHistory =
+        currentWorkflowSha !== undefined &&
+        related.some(
+          (entry) =>
+            entry.github_actions_dispatch?.workflow_sha !== undefined &&
+            entry.github_actions_dispatch.workflow_sha !== currentWorkflowSha,
+        ) &&
+        related.some(
+          (entry) => entry.github_actions_dispatch?.workflow_sha === currentWorkflowSha,
+        );
+      const modelRerouteRecovery =
+        related.length >= task.spec.max_attempts &&
+        related.length < task.spec.max_attempts + 2 &&
+        currentWorkflowSha !== undefined &&
+        failed.execution_backend === "github-actions" &&
+        failed.failure_reason === "GITHUB_ACTIONS_REVIEW_RUN_FAILED" &&
+        failed.github_actions_dispatch?.workflow_sha === currentWorkflowSha &&
+        failed.model?.model !== undefined &&
+        (related.length === task.spec.max_attempts || hasWorkflowUpdateHistory);
+      if (
+        related.length >= task.spec.max_attempts &&
+        !workflowUpdateRecovery &&
+        !modelRerouteRecovery
+      ) {
+        throw new ControllerError(
+          "MAX_REVIEW_ATTEMPTS_EXCEEDED",
+          "Independent review reached the task max_attempts bound",
+          { attempts: related.length, maxAttempts: task.spec.max_attempts },
+        );
+      }
+
+      const reviewId = "review-" + randomUUID();
+      const createdAt = this.#now().toISOString();
+      const review: StoredReviewRun = {
+        review_id: reviewId,
+        task_id: failed.task_id,
+        source_attempt_id: failed.source_attempt_id,
+        candidate_hash: failed.candidate_hash,
+        patch_sha256: failed.patch_sha256,
+        state: "READY",
+        correlation_id: correlationId,
+        actor_id: actorId,
+        created_at: createdAt,
+        slot_released: true,
+        ...(failed.model?.model ? { excluded_models: [failed.model.model] } : {}),
+      };
+      snapshot.reviews[reviewId] = review;
+      task.revision += 1;
+      task.events.push({
+        schema_version: "1.0",
+        event_id: randomUUID(),
+        task_id: task.spec.task_id,
+        attempt_id: source.attempt_id,
+        from_state: "INDEPENDENT_REVIEW",
+        to_state: "INDEPENDENT_REVIEW",
+        reason_code: "REVIEW_RETRY_REQUESTED",
+        actor_class: "MASTER",
+        actor_id: actorId,
+        at: createdAt,
+        correlation_id: correlationId,
+        authoritative_revision: task.revision,
+        details: {
+          failed_review_id: failedReviewId,
+          review_id: reviewId,
+          candidate_hash: failed.candidate_hash,
+          source_attempt_id: source.attempt_id,
+          ...(workflowUpdateRecovery
+            ? {
+                recovery_mode: "trusted_workflow_update",
+                previous_workflow_sha: failed.github_actions_dispatch!.workflow_sha,
+                current_workflow_sha: currentWorkflowSha!,
+              }
+            : modelRerouteRecovery
+              ? {
+                  recovery_mode: "review_model_reroute",
+                  failed_model: failed.model!.model,
+                  current_workflow_sha: currentWorkflowSha!,
+                }
+              : {}),
+        },
+      });
+      return structuredClone(review);
+    });
+  }
+
   claimReview(
     reviewId: string,
     correlationId: string,
     actorId: string,
+    currentWorkflowSha?: string,
   ): StoredReviewRun {
     if (!this.#freeModelPolicyPath || !this.#freeModelStatePath) {
       throw new ControllerError(
@@ -1545,6 +1706,12 @@ export class ControllerCore {
       now: this.#now(),
     });
     const now = this.#now();
+    if (currentWorkflowSha !== undefined && !/^[0-9a-f]{40}$/.test(currentWorkflowSha)) {
+      throw new ControllerError(
+        "GITHUB_ACTIONS_WORKFLOW_SHA_INVALID",
+        "Review claim workflow SHA must be a canonical 40-hex commit",
+      );
+    }
 
     return this.#store.mutate((snapshot) => {
       const review = snapshot.reviews[reviewId];
@@ -1599,6 +1766,27 @@ export class ControllerCore {
         });
       }
       const reviewExcludedModels = new Set<string>([source.model.model]);
+      for (const excludedModel of review.excluded_models ?? []) {
+        const exclusionFailure = Object.values(snapshot.reviews)
+          .filter(
+            (entry) =>
+              entry.task_id === review.task_id &&
+              entry.source_attempt_id === review.source_attempt_id &&
+              entry.candidate_hash === review.candidate_hash &&
+              entry.state === "FAILED" &&
+              entry.model?.model === excludedModel &&
+              entry.created_at <= review.created_at,
+          )
+          .sort((left, right) => right.created_at.localeCompare(left.created_at))[0];
+        const exclusionWorkflowSha = exclusionFailure?.github_actions_dispatch?.workflow_sha;
+        const trustedWorkflowChanged =
+          currentWorkflowSha !== undefined &&
+          exclusionWorkflowSha !== undefined &&
+          exclusionWorkflowSha !== currentWorkflowSha;
+        if (!trustedWorkflowChanged) {
+          reviewExcludedModels.add(excludedModel);
+        }
+      }
       const capacityExcludedModels = modelsAtInferenceCapacity(
         snapshot.attempts,
         snapshot.reviews,

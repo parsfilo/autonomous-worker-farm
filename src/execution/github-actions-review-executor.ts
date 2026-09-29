@@ -101,13 +101,14 @@ export class GitHubActionsReviewExecutor {
     );
     if (
       review.execution_backend !== "github-actions" ||
-      review.state !== "LEASED" ||
+      !["LEASED", "PROVISIONING", "RUNNING"].includes(review.state) ||
       !review.machine_id ||
       !review.model
     ) {
       throw new ControllerError(
         "REVIEW_STATE_INVALID",
-        "GitHub Actions review executor requires a github-actions LEASED review",
+        "GitHub Actions review executor requires a github-actions LEASED/PROVISIONING/RUNNING review",
+        { reviewState: review.state },
       );
     }
     const sourceExecution = sourceAttempt.github_actions_execution;
@@ -122,18 +123,6 @@ export class GitHubActionsReviewExecutor {
       throw new ControllerError(
         "REVIEW_SOURCE_EVIDENCE_MISSING",
         "GitHub Actions reviewer requires the exact retained source write artifact/evidence",
-      );
-    }
-
-    const observedWorkflowSha = await this.#api.getBranchHead(
-      this.#workerRepo,
-      this.#dispatchRef,
-    );
-    if (observedWorkflowSha !== this.#workflowSha) {
-      throw new ControllerError(
-        "GITHUB_ACTIONS_WORKFLOW_SHA_MISMATCH",
-        "Worker-farm review branch does not match the Controller-pinned workflow commit",
-        { expected: this.#workflowSha, observed: observedWorkflowSha },
       );
     }
 
@@ -153,50 +142,96 @@ export class GitHubActionsReviewExecutor {
       sourceArtifactDigest: sourceExecution.artifact_digest,
     });
     const artifactName = "awf-review-" + reviewId;
-    const parts = task.repo_id.split("/");
-    const dispatch = await this.#api.dispatch({
-      workerRepo: this.#workerRepo,
-      workflow: this.#workflow,
-      ref: this.#dispatchRef,
-      inputs: {
-        mode: "review",
-        attempt_id: reviewId,
-        attempt_no: "1",
-        machine_id: review.machine_id,
-        model: review.model.model,
-        artifact_name: artifactName,
-        target_repo: task.repo_id,
-        target_owner: parts[0]!,
-        target_name: parts[1]!,
-        target_visibility: passport.visibility,
-        base_sha: task.base_sha,
-        task_b64: encodeJson(reviewSpec),
-        passport_b64: encodeJson(passport),
-        quality_profile_b64: encodeJson(profile),
-        source_attempt_id: sourceAttempt.attempt_id,
-        source_artifact_id: String(sourceExecution.artifact_id),
-        source_artifact_digest: sourceExecution.artifact_digest,
-        candidate_hash: review.candidate_hash,
-        patch_sha256: review.patch_sha256,
-      },
-    });
-    this.#core.beginGitHubActionsReviewProvisioning(
-      reviewId,
-      {
-        worker_repo: this.#workerRepo,
+    let dispatch:
+      | {
+          workflow_run_id: number;
+          run_url: string;
+        }
+      | undefined;
+
+    if (review.state === "LEASED") {
+      const observedWorkflowSha = await this.#api.getBranchHead(
+        this.#workerRepo,
+        this.#dispatchRef,
+      );
+      if (observedWorkflowSha !== this.#workflowSha) {
+        throw new ControllerError(
+          "GITHUB_ACTIONS_WORKFLOW_SHA_MISMATCH",
+          "Worker-farm review branch does not match the Controller-pinned workflow commit",
+          { expected: this.#workflowSha, observed: observedWorkflowSha },
+        );
+      }
+
+      const parts = task.repo_id.split("/");
+      const created = await this.#api.dispatch({
+        workerRepo: this.#workerRepo,
         workflow: this.#workflow,
-        dispatch_ref: this.#dispatchRef,
-        workflow_run_id: dispatch.workflow_run_id,
-        run_url: dispatch.run_url,
-        workflow_sha: this.#workflowSha,
-      },
-      requestHash,
-    );
+        ref: this.#dispatchRef,
+        inputs: {
+          mode: "review",
+          attempt_id: reviewId,
+          attempt_no: "1",
+          machine_id: review.machine_id,
+          model: review.model.model,
+          artifact_name: artifactName,
+          target_repo: task.repo_id,
+          target_owner: parts[0]!,
+          target_name: parts[1]!,
+          target_visibility: passport.visibility,
+          base_sha: task.base_sha,
+          task_b64: encodeJson(reviewSpec),
+          passport_b64: encodeJson(passport),
+          quality_profile_b64: encodeJson(profile),
+          source_attempt_id: sourceAttempt.attempt_id,
+          source_artifact_id: String(sourceExecution.artifact_id),
+          source_artifact_digest: sourceExecution.artifact_digest,
+          candidate_hash: review.candidate_hash,
+          patch_sha256: review.patch_sha256,
+        },
+      });
+      this.#core.beginGitHubActionsReviewProvisioning(
+        reviewId,
+        {
+          worker_repo: this.#workerRepo,
+          workflow: this.#workflow,
+          dispatch_ref: this.#dispatchRef,
+          workflow_run_id: created.workflow_run_id,
+          run_url: created.run_url,
+          workflow_sha: this.#workflowSha,
+        },
+        requestHash,
+      );
+      dispatch = created;
+    } else {
+      const stored = review.github_actions_dispatch;
+      if (
+        !stored ||
+        stored.worker_repo !== this.#workerRepo ||
+        stored.workflow !== this.#workflow ||
+        stored.dispatch_ref !== this.#dispatchRef ||
+        stored.workflow_sha !== this.#workflowSha
+      ) {
+        throw new ControllerError(
+          "GITHUB_ACTIONS_REVIEW_RESUME_BINDING_MISMATCH",
+          "Stored GitHub Actions review dispatch does not match the configured trusted worker binding",
+        );
+      }
+      if (review.sandbox_request_hash !== requestHash) {
+        throw new ControllerError(
+          "GITHUB_ACTIONS_REVIEW_RESUME_BINDING_MISMATCH",
+          "Stored GitHub Actions review request hash changed before resume",
+        );
+      }
+      dispatch = {
+        workflow_run_id: stored.workflow_run_id,
+        run_url: stored.run_url,
+      };
+    }
 
     const deadline =
       this.#now().getTime() +
       Math.max(task.lease_ttl_seconds, task.timeout_seconds + 300) * 1000;
-    let markedRunning = false;
+    let markedRunning = review.state === "RUNNING";
     let run = await this.#api.getRun(this.#workerRepo, dispatch.workflow_run_id);
     for (;;) {
       if (run.head_sha.toLowerCase() !== this.#workflowSha) {
@@ -273,7 +308,10 @@ export class GitHubActionsReviewExecutor {
       workflowRunAttempt: run.run_attempt,
       workflowSha: this.#workflowSha,
       fetch: this.#fetch,
-      now: this.#now,
+      // OIDC is archival execution evidence. Verify its temporal validity at
+      // the authenticated GitHub run completion timestamp, not at a later
+      // Controller reconciliation wall clock.
+      now: () => new Date(run.updated_at),
     });
     const receipt = finalizeGitHubActionsExecutionReceipt({
       schema_version: "1.0",

@@ -224,7 +224,7 @@ export interface RepoPassport {
   allowed_harnesses: string[];
   allowed_model_classes: ModelClass[];
   independent_review_required: boolean;
-  merge_method: "squash" | "merge" | "rebase";
+  merge_method: "squash" | "merge" | "rebase" | "fast-forward";
   post_merge_checks: string[];
   policy_revision?: number;
 }
@@ -517,7 +517,7 @@ export interface GitHubMergeReceipt {
   integration_artifact_hash: string;
   remote_verification_report_hash: string;
   expected_head_sha: string;
-  merge_method: "squash" | "merge" | "rebase";
+  merge_method: "squash" | "merge" | "rebase" | "fast-forward";
   merge_sha: string;
   observed_base_sha: string | null;
   base_head_matches_merge: boolean | null;

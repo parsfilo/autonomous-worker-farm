@@ -510,6 +510,40 @@ export function buildServer(core: ControllerCore): McpServer {
   );
 
   server.registerTool(
+    "fleet.retry_review",
+    {
+      description:
+        "Create one bounded fresh review attempt for the exact candidate after a FAILED independent review. The failed review remains immutable history; active duplicate review attempts are rejected. If the normal bound is exhausted, one recovery attempt is permitted only after the Controller-pinned GitHub Actions workflow SHA changed from the failed run.",
+      inputSchema: z.object({
+        review_id: z.string().min(1).max(128),
+        correlation_id: z.string().min(1).max(128),
+        actor_id: z.string().min(1).max(128),
+      }),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ review_id, correlation_id, actor_id }) => {
+      try {
+        const backend = loadExecutionBackendConfig();
+        return result(
+          core.retryReview(
+            review_id,
+            correlation_id,
+            actor_id,
+            backend.backend === "github-actions" ? backend.workflowSha : undefined,
+          ),
+        );
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
     "fleet.claim_review",
     {
       description:
@@ -528,7 +562,15 @@ export function buildServer(core: ControllerCore): McpServer {
     },
     async ({ review_id, correlation_id, actor_id }) => {
       try {
-        return result(core.claimReview(review_id, correlation_id, actor_id));
+        const backend = loadExecutionBackendConfig();
+        return result(
+          core.claimReview(
+            review_id,
+            correlation_id,
+            actor_id,
+            backend.backend === "github-actions" ? backend.workflowSha : undefined,
+          ),
+        );
       } catch (error) {
         return errorResult(error);
       }

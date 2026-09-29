@@ -111,23 +111,22 @@ export class GitHubMergeExecutor {
     );
     const api = await this.#api(taskRecord.spec.repo_id);
 
-    try {
-      const merged = await api.mergePull(
-        taskRecord.spec.repo_id,
-        publication.pr_number,
-        integration.commit_sha,
-        passport.merge_method,
-      );
-      let observedBase: string | null = null;
+    const observeBase = async (): Promise<string | null> => {
       try {
-        observedBase = await api.getBranchHead(
+        return await api.getBranchHead(
           taskRecord.spec.repo_id,
           taskRecord.spec.base_ref,
         );
       } catch {
-        observedBase = null;
+        return null;
       }
-      const receipt = finalizeGitHubMergeReceipt({
+    };
+    const buildReceipt = (
+      mergeSha: string,
+      observedBase: string | null,
+      build: string,
+    ) =>
+      finalizeGitHubMergeReceipt({
         schema_version: "1.0",
         provider: "github",
         repo_id: taskRecord.spec.repo_id,
@@ -138,62 +137,78 @@ export class GitHubMergeExecutor {
         remote_verification_report_hash: persistedRemote.report_hash,
         expected_head_sha: integration.commit_sha,
         merge_method: passport.merge_method,
-        merge_sha: merged.sha,
+        merge_sha: mergeSha,
         observed_base_sha: observedBase,
         base_head_matches_merge:
-          observedBase === null ? null : observedBase === merged.sha,
+          observedBase === null ? null : observedBase === mergeSha,
         merged_at: this.#now().toISOString(),
         observer: {
           kind: "trusted-git-integrator",
-          build: this.#build,
+          build,
         },
       });
+
+    try {
+      let mergeSha: string;
+      if (passport.merge_method === "fast-forward") {
+        const updated = await api.fastForwardBranch(
+          taskRecord.spec.repo_id,
+          taskRecord.spec.base_ref,
+          taskRecord.spec.base_sha,
+          integration.commit_sha,
+        );
+        mergeSha = updated.sha;
+        if (mergeSha !== integration.commit_sha) {
+          throw new ControllerError(
+            "GITHUB_FAST_FORWARD_FAILED",
+            "Fast-forward merge did not preserve the exact deterministic integration commit",
+            { expected: integration.commit_sha, observed: mergeSha },
+          );
+        }
+      } else {
+        const merged = await api.mergePull(
+          taskRecord.spec.repo_id,
+          publication.pr_number,
+          integration.commit_sha,
+          passport.merge_method,
+        );
+        mergeSha = merged.sha;
+      }
+
+      const observedBase = await observeBase();
+      const receipt = buildReceipt(mergeSha, observedBase, this.#build);
       const task = this.#core.completeMerge(receipt);
       return { task, receipt };
     } catch (error) {
       try {
-        const pull = await api.getPull(
-          taskRecord.spec.repo_id,
-          publication.pr_number,
-        );
-        const recoveredMergeSha = pull.merge_commit_sha?.toLowerCase() ?? null;
+        const observedBase = await observeBase();
+        let recoveredMergeSha: string | null = null;
         if (
-          pull.merged === true &&
-          recoveredMergeSha &&
-          /^[0-9a-f]{40}$/.test(recoveredMergeSha)
+          passport.merge_method === "fast-forward" &&
+          observedBase === integration.commit_sha
         ) {
-          let observedBase: string | null = null;
-          try {
-            observedBase = await api.getBranchHead(
-              taskRecord.spec.repo_id,
-              taskRecord.spec.base_ref,
-            );
-          } catch {
-            observedBase = null;
+          recoveredMergeSha = integration.commit_sha;
+        } else if (passport.merge_method !== "fast-forward") {
+          const pull = await api.getPull(
+            taskRecord.spec.repo_id,
+            publication.pr_number,
+          );
+          const candidate = pull.merge_commit_sha?.toLowerCase() ?? null;
+          if (
+            pull.merged === true &&
+            candidate &&
+            /^[0-9a-f]{40}$/.test(candidate)
+          ) {
+            recoveredMergeSha = candidate;
           }
-          const receipt = finalizeGitHubMergeReceipt({
-            schema_version: "1.0",
-            provider: "github",
-            repo_id: taskRecord.spec.repo_id,
-            task_id: taskRecord.spec.task_id,
-            attempt_id: attempt.attempt_id,
-            pr_number: publication.pr_number,
-            integration_artifact_hash: integration.artifact_hash,
-            remote_verification_report_hash: persistedRemote.report_hash,
-            expected_head_sha: integration.commit_sha,
-            merge_method: passport.merge_method,
-            merge_sha: recoveredMergeSha,
-            observed_base_sha: observedBase,
-            base_head_matches_merge:
-              observedBase === null
-                ? null
-                : observedBase === recoveredMergeSha,
-            merged_at: this.#now().toISOString(),
-            observer: {
-              kind: "trusted-git-integrator",
-              build: this.#build + ":reconciled",
-            },
-          });
+        }
+
+        if (recoveredMergeSha) {
+          const receipt = buildReceipt(
+            recoveredMergeSha,
+            observedBase,
+            this.#build + ":reconciled",
+          );
           const task = this.#core.completeMerge(receipt);
           return { task, receipt };
         }

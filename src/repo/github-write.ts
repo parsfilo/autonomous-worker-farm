@@ -1,4 +1,4 @@
-import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
+import { trustedGitHubFetch, trustedGitProxyEnv } from "../net/trusted-github-fetch.js";
 import { execFile } from "node:child_process";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -310,6 +310,60 @@ export class GitHubRestApi {
     return value;
   }
 
+  async fastForwardBranch(
+    repoId: string,
+    branch: string,
+    expectedCurrentSha: string,
+    newSha: string,
+  ): Promise<{ sha: string; already_current: boolean }> {
+    if (!SHA40.test(expectedCurrentSha) || !SHA40.test(newSha)) {
+      throw new ControllerError(
+        "GITHUB_COMMIT_SHA_INVALID",
+        "Fast-forward ref update requires canonical current and target SHAs",
+      );
+    }
+    const current = await this.getBranchHead(repoId, branch);
+    if (current === null) {
+      throw new ControllerError(
+        "GITHUB_BASE_REF_MISSING",
+        "Fast-forward target branch does not exist",
+        { repoId, branch },
+      );
+    }
+    if (current === newSha) {
+      return { sha: newSha, already_current: true };
+    }
+    if (current !== expectedCurrentSha) {
+      throw new ControllerError(
+        "BASE_DRIFT",
+        "Fast-forward target branch changed after exact-SHA verification",
+        { expected: expectedCurrentSha, observed: current, branch },
+      );
+    }
+
+    const { owner, repo } = parseRepoId(repoId);
+    const path =
+      "/repos/" +
+      encodeURIComponent(owner) +
+      "/" +
+      encodeURIComponent(repo) +
+      "/git/refs/" +
+      encodeRef("heads/" + branch);
+    const value = await this.#request<RefResponse>("PATCH", path, {
+      sha: newSha,
+      force: false,
+    });
+    const observed = value?.object?.sha?.toLowerCase() ?? "";
+    if (value?.object?.type !== "commit" || observed !== newSha) {
+      throw new ControllerError(
+        "GITHUB_FAST_FORWARD_FAILED",
+        "GitHub did not return the exact requested fast-forward target SHA",
+        { expected: newSha, observed: observed || null },
+      );
+    }
+    return { sha: observed, already_current: false };
+  }
+
   async mergePull(
     repoId: string,
     pullNumber: number,
@@ -427,6 +481,7 @@ export class GitHubHttpsCommitPusher implements ExactCommitPusher {
             GIT_ASKPASS_REQUIRE: "force",
             GIT_ASKPASS: askpass,
             AWF_GITHUB_INSTALLATION_TOKEN: input.token,
+            ...trustedGitProxyEnv(),
           },
         },
       );

@@ -1,5 +1,5 @@
 import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
-import { chmod, lstat, mkdir, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import type {
   QualityProfile,
@@ -83,7 +83,19 @@ async function persistPatch(
     );
   }
   const path = join(root, attemptId + ".patch");
-  await writeFile(path, patchBytes, { mode: 0o600, flag: "wx" });
+  try {
+    await writeFile(path, patchBytes, { mode: 0o600, flag: "wx" });
+  } catch (error) {
+    const value = error as { code?: string };
+    if (value.code !== "EEXIST") throw error;
+    const existing = await readFile(path);
+    if (sha256Bytes(existing) !== sha256Bytes(patchBytes)) {
+      throw new ControllerError(
+        "CANDIDATE_PATCH_CONFLICT",
+        "Existing candidate patch bytes differ during GitHub Actions resume",
+      );
+    }
+  }
   await chmod(path, 0o600);
   return path;
 }
@@ -186,12 +198,13 @@ export class GitHubActionsAttemptExecutor {
 
     if (
       attempt.execution_backend !== "github-actions" ||
-      attempt.state !== "LEASED" ||
-      taskRecord.state !== "LEASED"
+      !["LEASED", "PROVISIONING", "RUNNING"].includes(attempt.state) ||
+      attempt.state !== taskRecord.state
     ) {
       throw new ControllerError(
         "ATTEMPT_STATE_INVALID",
-        "GitHub Actions executor requires a github-actions LEASED attempt",
+        "GitHub Actions executor requires a github-actions LEASED/PROVISIONING/RUNNING attempt with matching task state",
+        { attemptState: attempt.state, taskState: taskRecord.state },
       );
     }
     if (task.archetype === "independent-reviewer" || task.write_scope.length === 0) {
@@ -201,57 +214,85 @@ export class GitHubActionsAttemptExecutor {
       );
     }
 
-    const observedWorkflowSha = await this.#api.getBranchHead(
-      this.#workerRepo,
-      this.#dispatchRef,
-    );
-    if (observedWorkflowSha !== this.#workflowSha) {
-      throw new ControllerError(
-        "GITHUB_ACTIONS_WORKFLOW_SHA_MISMATCH",
-        "Worker-farm dispatch branch does not match the Controller-pinned workflow commit",
-        {
-          expected: this.#workflowSha,
-          observed: observedWorkflowSha,
-          workerRepo: this.#workerRepo,
-          dispatchRef: this.#dispatchRef,
-        },
-      );
-    }
-
     const artifactName = "awf-attempt-" + attemptId;
-    const dispatch = await this.#api.dispatch({
-      workerRepo: this.#workerRepo,
-      workflow: this.#workflow,
-      ref: this.#dispatchRef,
-      inputs: {
-        mode: "write",
-        attempt_id: attemptId,
-        attempt_no: String(attempt.attempt_no),
-        machine_id: attempt.machine_id,
-        model: attempt.model.model,
-        artifact_name: artifactName,
-        target_repo: task.repo_id,
-        target_owner: task.repo_id.split("/", 1)[0]!,
-        target_name: task.repo_id.split("/")[1]!,
-        target_visibility: passport.visibility,
-        base_sha: task.base_sha,
-        task_b64: encodeJson(task),
-        passport_b64: encodeJson(passport),
-        quality_profile_b64: encodeJson(profile),
-      },
-    });
-    this.#core.beginGitHubActionsProvisioning(attemptId, {
-      worker_repo: this.#workerRepo,
-      workflow: this.#workflow,
-      dispatch_ref: this.#dispatchRef,
-      workflow_run_id: dispatch.workflow_run_id,
-      run_url: dispatch.run_url,
-      workflow_sha: this.#workflowSha,
-    });
+    let dispatch:
+      | {
+          workflow_run_id: number;
+          run_url: string;
+        }
+      | undefined;
+
+    if (attempt.state === "LEASED") {
+      const observedWorkflowSha = await this.#api.getBranchHead(
+        this.#workerRepo,
+        this.#dispatchRef,
+      );
+      if (observedWorkflowSha !== this.#workflowSha) {
+        throw new ControllerError(
+          "GITHUB_ACTIONS_WORKFLOW_SHA_MISMATCH",
+          "Worker-farm dispatch branch does not match the Controller-pinned workflow commit",
+          {
+            expected: this.#workflowSha,
+            observed: observedWorkflowSha,
+            workerRepo: this.#workerRepo,
+            dispatchRef: this.#dispatchRef,
+          },
+        );
+      }
+
+      const created = await this.#api.dispatch({
+        workerRepo: this.#workerRepo,
+        workflow: this.#workflow,
+        ref: this.#dispatchRef,
+        inputs: {
+          mode: "write",
+          attempt_id: attemptId,
+          attempt_no: String(attempt.attempt_no),
+          machine_id: attempt.machine_id,
+          model: attempt.model.model,
+          artifact_name: artifactName,
+          target_repo: task.repo_id,
+          target_owner: task.repo_id.split("/", 1)[0]!,
+          target_name: task.repo_id.split("/")[1]!,
+          target_visibility: passport.visibility,
+          base_sha: task.base_sha,
+          task_b64: encodeJson(task),
+          passport_b64: encodeJson(passport),
+          quality_profile_b64: encodeJson(profile),
+        },
+      });
+      this.#core.beginGitHubActionsProvisioning(attemptId, {
+        worker_repo: this.#workerRepo,
+        workflow: this.#workflow,
+        dispatch_ref: this.#dispatchRef,
+        workflow_run_id: created.workflow_run_id,
+        run_url: created.run_url,
+        workflow_sha: this.#workflowSha,
+      });
+      dispatch = created;
+    } else {
+      const stored = attempt.github_actions_dispatch;
+      if (
+        !stored ||
+        stored.worker_repo !== this.#workerRepo ||
+        stored.workflow !== this.#workflow ||
+        stored.dispatch_ref !== this.#dispatchRef ||
+        stored.workflow_sha !== this.#workflowSha
+      ) {
+        throw new ControllerError(
+          "GITHUB_ACTIONS_RESUME_BINDING_MISMATCH",
+          "Stored GitHub Actions dispatch does not match the configured trusted worker binding",
+        );
+      }
+      dispatch = {
+        workflow_run_id: stored.workflow_run_id,
+        run_url: stored.run_url,
+      };
+    }
 
     const deadline =
       this.#now().getTime() + Math.max(task.lease_ttl_seconds, task.timeout_seconds + 300) * 1000;
-    let markedRunning = false;
+    let markedRunning = attempt.state === "RUNNING";
     let run = await this.#api.getRun(this.#workerRepo, dispatch.workflow_run_id);
     for (;;) {
       if (run.head_sha.toLowerCase() !== this.#workflowSha) {
@@ -364,7 +405,10 @@ export class GitHubActionsAttemptExecutor {
       workflowRunAttempt: run.run_attempt,
       workflowSha: this.#workflowSha,
       fetch: this.#fetch,
-      now: this.#now,
+      // OIDC is archival execution evidence. Verify its temporal validity at
+      // the authenticated GitHub run completion timestamp, not at a later
+      // Controller reconciliation wall clock.
+      now: () => new Date(run.updated_at),
     });
 
     const receipt = finalizeGitHubActionsExecutionReceipt({

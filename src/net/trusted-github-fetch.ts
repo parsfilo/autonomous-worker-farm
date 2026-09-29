@@ -91,6 +91,32 @@ export function createTrustedGitHubFetch(
   }) as typeof fetch;
 }
 
+
+export function trustedGitProxyEnv(): Record<string, string> {
+  const raw = process.env.AWF_GITHUB_GIT_PROXY_URL?.trim();
+  if (!raw) return {};
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new ControllerError(
+      "GITHUB_GIT_PROXY_CONFIG_INVALID",
+      "AWF_GITHUB_GIT_PROXY_URL is invalid",
+    );
+  }
+  if (
+    url.protocol !== "http:" ||
+    !["127.0.0.1", "localhost", "[::1]", "::1"].includes(url.hostname)
+  ) {
+    throw new ControllerError(
+      "GITHUB_GIT_PROXY_CONFIG_INVALID",
+      "GitHub Git proxy must be loopback HTTP",
+      { proxy: raw },
+    );
+  }
+  return { HTTPS_PROXY: raw, https_proxy: raw };
+}
+
 let cached: { key: string; fetchImpl: typeof fetch } | null = null;
 
 export const trustedGitHubFetch: typeof fetch = (async (

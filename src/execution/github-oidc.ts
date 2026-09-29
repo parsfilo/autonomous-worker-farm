@@ -152,7 +152,15 @@ export async function verifyGitHubActionsOidc(input: {
   }
 
   const claims = payload as unknown as GitHubOidcClaims;
-  const now = Math.floor((input.now ?? (() => new Date()))().getTime() / 1000);
+  const observedAt = (input.now ?? (() => new Date()))();
+  const observedAtMs = observedAt.getTime();
+  if (!Number.isFinite(observedAtMs)) {
+    throw new ControllerError(
+      "GITHUB_OIDC_TIME_INVALID",
+      "GitHub OIDC verification time is invalid",
+    );
+  }
+  const now = Math.floor(observedAtMs / 1000);
   const expectedWorkflowRef = workflowRef(
     input.workerRepo,
     input.workflow,

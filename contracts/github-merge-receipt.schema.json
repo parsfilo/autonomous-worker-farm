@@ -20,7 +20,7 @@
     "integration_artifact_hash": { "$ref": "#/$defs/sha256" },
     "remote_verification_report_hash": { "$ref": "#/$defs/sha256" },
     "expected_head_sha": { "$ref": "#/$defs/gitSha" },
-    "merge_method": { "enum": ["squash", "merge", "rebase"] },
+    "merge_method": { "enum": ["squash", "merge", "rebase", "fast-forward"] },
     "merge_sha": { "$ref": "#/$defs/gitSha" },
     "observed_base_sha": {
       "oneOf": [
