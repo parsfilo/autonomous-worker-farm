@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import type { IndependentReviewReport, QualityProfile } from "../../contracts/types.js";
 import { ControllerCore } from "../controller/controller.js";
 import { ControllerError } from "../lib/errors.js";
@@ -63,7 +64,7 @@ export class GitHubActionsReviewExecutor {
     this.#workflowSha = options.workflowSha.toLowerCase();
     this.#qualityProfileRoot = options.qualityProfileRoot;
     this.#pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_MS;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#now = options.now ?? (() => new Date());
     this.#sleep =
       options.sleep ??

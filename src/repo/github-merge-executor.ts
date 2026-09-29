@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import { ControllerCore } from "../controller/controller.js";
 import { ControllerError } from "../lib/errors.js";
 import {
@@ -25,7 +26,7 @@ export class GitHubMergeExecutor {
   constructor(options: GitHubMergeExecutorOptions) {
     this.#core = options.core;
     this.#credentials = options.credentials;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#now = options.now ?? (() => new Date());
     this.#build = options.build ?? "github-merge-executor-v1";
   }

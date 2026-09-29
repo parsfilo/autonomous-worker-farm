@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import { execFile } from "node:child_process";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -108,7 +109,7 @@ export class GitHubRestApi {
   readonly #token: string;
   readonly #fetch: typeof fetch;
 
-  constructor(token: string, fetchImpl: typeof fetch = fetch) {
+  constructor(token: string, fetchImpl: typeof fetch = trustedGitHubFetch) {
     if (!token) {
       throw new ControllerError(
         "GITHUB_TOKEN_INVALID",
@@ -463,7 +464,7 @@ export class GitHubPullRequestPublisher {
 
   constructor(options: GitHubPullRequestPublisherOptions) {
     this.#credentials = options.credentials;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#pusher = options.pusher ?? new GitHubHttpsCommitPusher();
     this.#now = options.now ?? (() => new Date());
   }

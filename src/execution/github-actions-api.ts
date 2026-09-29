@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import { createHash } from "node:crypto";
 import type { GitHubInstallationTokenProvider } from "../repo/github-write.js";
 import { GITHUB_API_VERSION } from "../repo/github-write.js";
@@ -51,7 +52,7 @@ export class GitHubActionsApi {
 
   constructor(
     credentials: GitHubInstallationTokenProvider,
-    fetchImpl: typeof fetch = fetch,
+    fetchImpl: typeof fetch = trustedGitHubFetch,
   ) {
     this.#credentials = credentials;
     this.#fetch = fetchImpl;

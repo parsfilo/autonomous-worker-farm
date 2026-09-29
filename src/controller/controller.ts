@@ -1149,6 +1149,8 @@ export class ControllerCore {
 
       const supportedEvidence = new Set([
         "sandbox_attestation",
+        "patch",
+        "candidate_hash",
         ...(this.#localVerificationEnabled ? ["tests"] : []),
       ]);
       const unsupportedEvidence = task.spec.evidence_requirements.filter(

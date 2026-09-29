@@ -474,13 +474,13 @@ export interface GitIntegrationArtifact {
   tree_sha: string;
   commit_sha: string;
   author: {
-    name: "Autonomous Worker Controller";
-    email: "controller@autonomous-worker.invalid";
+    name: string;
+    email: string;
     timestamp: "2000-01-01T00:00:00Z";
   };
   committer: {
-    name: "Autonomous Worker Controller";
-    email: "controller@autonomous-worker.invalid";
+    name: string;
+    email: string;
     timestamp: "2000-01-01T00:00:00Z";
   };
   message_sha256: string;

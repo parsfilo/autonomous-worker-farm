@@ -118,7 +118,11 @@ jobs:
         run: |
           set -euo pipefail
           case "$AWF_MODE" in write|review) ;; *) exit 64 ;; esac
-          case "$AWF_ATTEMPT_ID" in attempt-*) ;; *) exit 64 ;; esac
+          if [ "$AWF_MODE" = write ]; then
+            case "$AWF_ATTEMPT_ID" in attempt-*) ;; *) exit 64 ;; esac
+          else
+            case "$AWF_ATTEMPT_ID" in review-*) ;; *) exit 64 ;; esac
+          fi
           case "$AWF_ATTEMPT_NO" in ''|*[!0-9]*) exit 64 ;; esac
           test "$AWF_ATTEMPT_NO" -ge 1
           test -n "$AWF_MACHINE_ID"

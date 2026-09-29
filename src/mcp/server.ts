@@ -68,6 +68,36 @@ function githubCredentialsFromEnvironment(): GitHubAppInstallationTokenProvider 
   });
 }
 
+function targetGitIdentityFromEnvironment(repoId: string): { name: string; email: string } {
+  const name = process.env.AWF_TARGET_GIT_NAME?.trim();
+  const email = process.env.AWF_TARGET_GIT_EMAIL?.trim();
+  if (!name || !email) {
+    throw new ControllerError(
+      "GIT_INTEGRATION_IDENTITY_REQUIRED",
+      "Trusted target Git author/committer identity is not configured",
+      { required_environment: ["AWF_TARGET_GIT_NAME", "AWF_TARGET_GIT_EMAIL"], repoId },
+    );
+  }
+  const owner = repoId.split("/", 1)[0] ?? "";
+  const lowerEmail = email.toLowerCase();
+  const ownerLower = owner.toLowerCase();
+  if (
+    name.toLowerCase() !== ownerLower ||
+    !(
+      lowerEmail === ownerLower + "@users.noreply.github.com" ||
+      (/^[0-9]+\+/.test(lowerEmail) &&
+        lowerEmail.endsWith("+" + ownerLower + "@users.noreply.github.com"))
+    )
+  ) {
+    throw new ControllerError(
+      "GIT_INTEGRATION_IDENTITY_MISMATCH",
+      "Configured target Git identity does not belong to repository owner",
+      { repoId, owner, name, email },
+    );
+  }
+  return { name, email };
+}
+
 function githubActionsCredentialsFromEnvironment(): GitHubAppInstallationTokenProvider {
   const clientId = process.env.AWF_WORKER_GITHUB_APP_CLIENT_ID?.trim();
   const privateKeyPath =
@@ -614,6 +644,7 @@ export function buildServer(core: ControllerCore): McpServer {
           task,
           attempt,
           destination,
+          identity: targetGitIdentityFromEnvironment(task.repo_id),
         });
         const recorded = core.recordGitIntegrationArtifact(attempt_id, artifact);
         return result({ attempt: recorded, integration: artifact });

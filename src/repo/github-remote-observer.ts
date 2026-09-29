@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import type {
   GitIntegrationArtifact,
   RemoteVerificationReport,
@@ -126,7 +127,7 @@ export class GitHubRemoteObserver {
 
   constructor(options: GitHubRemoteObserverOptions) {
     this.#credentials = options.credentials;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#now = options.now ?? (() => new Date());
     this.#build = options.build ?? "github-remote-observer-v1";
   }

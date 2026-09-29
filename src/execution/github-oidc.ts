@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import {
   createHash,
   createPublicKey,
@@ -93,7 +94,7 @@ export async function verifyGitHubActionsOidc(input: {
     );
   }
 
-  const fetchImpl = input.fetch ?? fetch;
+  const fetchImpl = input.fetch ?? trustedGitHubFetch;
   const discoveryResponse = await fetchImpl(DISCOVERY_URL, {
     headers: { Accept: "application/json" },
   });

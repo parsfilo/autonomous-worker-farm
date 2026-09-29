@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import {
   createPrivateKey,
   sign as cryptoSign,
@@ -7,7 +8,7 @@ import {
   readFileSync,
   realpathSync,
 } from "node:fs";
-import { isAbsolute } from "node:path";
+import { isAbsolute, relative } from "node:path";
 import { ControllerError } from "../lib/errors.js";
 import {
   GITHUB_API_VERSION,
@@ -31,6 +32,30 @@ function parseRepoId(repoId: string): { owner: string; repo: string } {
     );
   }
   return { owner: match[1]!, repo: match[2]! };
+}
+
+function isTrustedSystemdCredential(
+  originalPath: string,
+  resolvedPath: string,
+  mode: number,
+): boolean {
+  const credentialsDirectory = process.env.CREDENTIALS_DIRECTORY?.trim();
+  if (!credentialsDirectory || mode !== 0o440) return false;
+
+  let resolvedDirectory: string;
+  try {
+    resolvedDirectory = realpathSync(credentialsDirectory);
+  } catch {
+    return false;
+  }
+
+  const rel = relative(resolvedDirectory, resolvedPath);
+  return (
+    rel.length > 0 &&
+    !rel.startsWith("..") &&
+    !isAbsolute(rel) &&
+    originalPath === resolvedPath
+  );
 }
 
 export interface GitHubAppJwtSigner {
@@ -71,15 +96,19 @@ export class FileGitHubAppJwtSigner implements GitHubAppJwtSigner {
         "GitHub App private key must be a real regular file",
       );
     }
-    if ((originalInfo.mode & 0o077) !== 0) {
+    const resolved = realpathSync(this.#privateKeyPath);
+    const mode = originalInfo.mode & 0o777;
+    if (
+      (mode & 0o077) !== 0 &&
+      !isTrustedSystemdCredential(this.#privateKeyPath, resolved, mode)
+    ) {
       throw new ControllerError(
         "GITHUB_APP_PRIVATE_KEY_PERMISSIONS_INVALID",
-        "GitHub App private key must not be accessible by group/other",
-        { mode: (originalInfo.mode & 0o777).toString(8) },
+        "GitHub App private key must not be accessible by group/other unless it is a systemd-managed credential",
+        { mode: mode.toString(8) },
       );
     }
 
-    const resolved = realpathSync(this.#privateKeyPath);
     const resolvedInfo = lstatSync(resolved);
     if (!resolvedInfo.isFile() || resolvedInfo.isSymbolicLink()) {
       throw new ControllerError(
@@ -154,7 +183,7 @@ export class GitHubAppInstallationTokenProvider
 
   constructor(options: GitHubAppInstallationTokenProviderOptions) {
     this.#signer = options.signer;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#permissions = options.permissions ?? {
       contents: "write",
       pull_requests: "write",

@@ -94,6 +94,10 @@ export class GitHubPrExecutor {
         task,
         attempt,
         destination,
+        identity: {
+          name: persistedIntegration.author.name,
+          email: persistedIntegration.author.email,
+        },
         ...(this.#materialize ? { materialize: this.#materialize } : {}),
       });
       if (

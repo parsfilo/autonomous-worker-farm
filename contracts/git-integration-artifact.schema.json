@@ -37,8 +37,8 @@
       "additionalProperties": false,
       "required": ["name", "email", "timestamp"],
       "properties": {
-        "name": { "const": "Autonomous Worker Controller" },
-        "email": { "const": "controller@autonomous-worker.invalid" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 254, "pattern": "^[^\\s@]+@[^\\s@]+$" },
         "timestamp": { "const": "2000-01-01T00:00:00Z" }
       }
     }

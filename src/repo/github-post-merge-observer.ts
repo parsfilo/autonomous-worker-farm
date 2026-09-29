@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import type {
   GitHubMergeReceipt,
   PostMergeVerificationReport,
@@ -72,7 +73,7 @@ export class GitHubPostMergeObserver {
 
   constructor(options: GitHubPostMergeObserverOptions) {
     this.#credentials = options.credentials;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#now = options.now ?? (() => new Date());
     this.#build = options.build ?? "github-post-merge-observer-v1";
   }

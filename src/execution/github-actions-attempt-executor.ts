@@ -1,3 +1,4 @@
+import { trustedGitHubFetch } from "../net/trusted-github-fetch.js";
 import { chmod, lstat, mkdir, writeFile } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import type {
@@ -145,7 +146,7 @@ export class GitHubActionsAttemptExecutor {
     this.#candidateArtifactRoot = resolve(options.candidateArtifactRoot);
     this.#qualityProfileRoot = resolve(options.qualityProfileRoot);
     this.#pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_MS;
-    this.#fetch = options.fetch ?? fetch;
+    this.#fetch = options.fetch ?? trustedGitHubFetch;
     this.#now = options.now ?? (() => new Date());
     this.#sleep =
       options.sleep ??

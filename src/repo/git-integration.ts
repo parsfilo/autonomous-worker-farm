@@ -20,9 +20,35 @@ import type { StoredAttempt, StoredRepoSource } from "../store/file-store.js";
 
 const execFileAsync = promisify(execFile);
 const GIT_SHA = /^[0-9a-f]{40}$/;
-const FIXED_NAME = "Autonomous Worker Controller" as const;
-const FIXED_EMAIL = "controller@autonomous-worker.invalid" as const;
 const FIXED_TIMESTAMP = "2000-01-01T00:00:00Z" as const;
+
+export interface GitCommitIdentity {
+  name: string;
+  email: string;
+}
+
+function verifyRepoOwnedIdentity(
+  repoId: string,
+  identity: GitCommitIdentity,
+): void {
+  const owner = repoId.split("/", 1)[0] ?? "";
+  const name = identity.name.trim();
+  const email = identity.email.trim().toLowerCase();
+  const ownerLower = owner.toLowerCase();
+  const legacy = ownerLower + "@users.noreply.github.com";
+  const modernSuffix = "+" + ownerLower + "@users.noreply.github.com";
+  if (
+    !owner ||
+    name.toLowerCase() !== ownerLower ||
+    !(email === legacy || (/^[0-9]+\+/.test(email) && email.endsWith(modernSuffix)))
+  ) {
+    throw new ControllerError(
+      "GIT_INTEGRATION_IDENTITY_MISMATCH",
+      "Git integration identity must belong to the target repository owner",
+      { repoId, owner, name, email },
+    );
+  }
+}
 
 const SAFE_ENV = {
   PATH: "/usr/bin:/bin",
@@ -87,6 +113,14 @@ export function verifyGitIntegrationArtifact(
   contracts = new ContractRegistry(),
 ): GitIntegrationArtifact {
   contracts.validate<GitIntegrationArtifact>("git-integration-artifact", artifact);
+  verifyRepoOwnedIdentity(artifact.repo_id, artifact.author);
+  verifyRepoOwnedIdentity(artifact.repo_id, artifact.committer);
+  if (artifact.author.name !== artifact.committer.name || artifact.author.email !== artifact.committer.email) {
+    throw new ControllerError(
+      "GIT_INTEGRATION_IDENTITY_MISMATCH",
+      "Git integration author and committer identities must match",
+    );
+  }
   if (artifact.artifact_hash !== artifactHash(artifact)) {
     throw new ControllerError("GIT_INTEGRATION_ARTIFACT_HASH_MISMATCH", "Git integration artifact hash mismatch");
   }
@@ -101,6 +135,7 @@ export interface PrepareGitIntegrationInput {
   task: TaskSpec;
   attempt: StoredAttempt;
   destination: string;
+  identity: GitCommitIdentity;
   materialize?: typeof materializeGitHubPublicRepo;
   collectCandidate?: (repoPath: string, expectedBaseSha: string) => Promise<CandidateEvidence>;
 }
@@ -109,6 +144,7 @@ export async function prepareGitIntegrationArtifact(
   input: PrepareGitIntegrationInput,
 ): Promise<GitIntegrationArtifact> {
   const { task, attempt } = input;
+  verifyRepoOwnedIdentity(task.repo_id, input.identity);
   const manifest = attempt.result_manifest;
   if (
     attempt.task_id !== task.task_id ||
@@ -193,11 +229,11 @@ export async function prepareGitIntegrationArtifact(
 
   const message = "awf: candidate " + manifest.candidate_hash + "\n";
   const identityEnv = {
-    GIT_AUTHOR_NAME: FIXED_NAME,
-    GIT_AUTHOR_EMAIL: FIXED_EMAIL,
+    GIT_AUTHOR_NAME: input.identity.name,
+    GIT_AUTHOR_EMAIL: input.identity.email,
     GIT_AUTHOR_DATE: FIXED_TIMESTAMP,
-    GIT_COMMITTER_NAME: FIXED_NAME,
-    GIT_COMMITTER_EMAIL: FIXED_EMAIL,
+    GIT_COMMITTER_NAME: input.identity.name,
+    GIT_COMMITTER_EMAIL: input.identity.email,
     GIT_COMMITTER_DATE: FIXED_TIMESTAMP,
   };
   const commitSha = (
@@ -231,13 +267,13 @@ export async function prepareGitIntegrationArtifact(
     tree_sha: treeSha,
     commit_sha: commitSha,
     author: {
-      name: FIXED_NAME,
-      email: FIXED_EMAIL,
+      name: input.identity.name,
+      email: input.identity.email,
       timestamp: FIXED_TIMESTAMP,
     },
     committer: {
-      name: FIXED_NAME,
-      email: FIXED_EMAIL,
+      name: input.identity.name,
+      email: input.identity.email,
       timestamp: FIXED_TIMESTAMP,
     },
     message_sha256: sha256Bytes(Buffer.from(message, "utf8")),
