@@ -99,8 +99,6 @@ jobs:
     name: awf-${{ inputs.attempt_id }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      AWF_OUTPUT_DIR: ${{ runner.temp }}/awf-output
 
     steps:
       - name: Validate dispatch envelope
