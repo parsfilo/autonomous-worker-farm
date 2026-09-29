@@ -691,6 +691,15 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  if (error instanceof ControllerError) {
+    console.error(JSON.stringify({
+      name: error.name,
+      code: error.code,
+      message: error.message,
+      details: error.details ?? null,
+    }, null, 2));
+  } else {
+    console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  }
   process.exitCode = 1;
 });
